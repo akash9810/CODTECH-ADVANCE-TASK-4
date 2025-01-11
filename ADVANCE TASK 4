@@ -1,0 +1,95 @@
+import pulp
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import numpy as np
+
+# Define data
+warehouses = ['W1', 'W2', 'W3']  # Warehouse names
+customers = ['C1', 'C2', 'C3', 'C4']  # Customer names
+
+# Supply capacities for each warehouse
+supply = {'W1': 20, 'W2': 30, 'W3': 25}
+
+# Demand requirements for each customer
+demand = {'C1': 10, 'C2': 25, 'C3': 20, 'C4': 20}
+
+# Transportation costs (cost per unit from each warehouse to each customer)
+costs = {
+    ('W1', 'C1'): 8, ('W1', 'C2'): 6, ('W1', 'C3'): 10, ('W1', 'C4'): 9,
+    ('W2', 'C1'): 9, ('W2', 'C2'): 12, ('W2', 'C3'): 13, ('W2', 'C4'): 7,
+    ('W3', 'C1'): 14, ('W3', 'C2'): 9, ('W3', 'C3'): 16, ('W3', 'C4'): 5
+}
+
+# Create the optimization model
+model = pulp.LpProblem("Transportation_Cost_Minimization", pulp.LpMinimize)
+
+# Define decision variables
+variables = pulp.LpVariable.dicts("Ship",
+                                  [(w, c) for w in warehouses for c in customers],
+                                  lowBound=0, cat='Continuous')
+
+# Objective function
+model += pulp.lpSum(variables[w, c] * costs[w, c] for w in warehouses for c in customers), "Total_Transportation_Cost"
+
+# Supply constraints
+for w in warehouses:
+    model += pulp.lpSum(variables[w, c] for c in customers) <= supply[w], f"Supply_Constraint_{w}"
+
+# Demand constraints
+for c in customers:
+    model += pulp.lpSum(variables[w, c] for w in warehouses) >= demand[c], f"Demand_Constraint_{c}"
+
+# Solve the problem
+model.solve()
+
+# Print results
+print(f"Status: {pulp.LpStatus[model.status]}")
+print("Optimal Shipping Quantities:")
+for w in warehouses:
+    for c in customers:
+        print(f"From {w} to {c}: {variables[w, c].varValue:.2f} units")
+
+print(f"Minimum Transportation Cost: ${pulp.value(model.objective):.2f}")
+
+# Prepare data for visualizations
+shipping_quantities = np.zeros((len(warehouses), len(customers)))
+for i, w in enumerate(warehouses):
+    for j, c in enumerate(customers):
+        shipping_quantities[i, j] = variables[w, c].varValue
+
+# 1. Heatmap for Shipping Quantities
+shipping_df = pd.DataFrame(shipping_quantities, columns=customers, index=warehouses)
+plt.figure(figsize=(10, 6))
+sns.heatmap(shipping_df, annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={'label': 'Units Shipped'})
+plt.title("Optimal Shipping Quantities from Warehouses to Customers")
+plt.ylabel("Warehouses")
+plt.xlabel("Customers")
+plt.show()
+
+# 2. Bar Chart for Total Transportation Cost (per warehouse to customer pair)
+shipping_flat = shipping_df.melt(var_name="Customer", value_name="Quantity", ignore_index=False)
+shipping_flat['Warehouse'] = shipping_flat.index
+shipping_flat['Cost'] = shipping_flat['Quantity'] * shipping_flat.apply(lambda row: costs[(row['Warehouse'], row['Customer'])], axis=1)
+
+# Plot bar chart of cost per warehouse-customer pair
+plt.figure(figsize=(12, 6))
+sns.barplot(x="Warehouse", y="Cost", hue="Customer", data=shipping_flat, palette="viridis")
+plt.title("Transportation Cost per Warehouse-Customer Pair")
+plt.ylabel("Transportation Cost ($)")
+plt.xlabel("Warehouse")
+plt.show()
+
+# 3. Bar Chart for Supply and Demand Comparison
+supply_values = [supply[w] for w in warehouses]
+demand_values = [demand[c] for c in customers]
+
+fig, ax = plt.subplots(figsize=(12, 6))
+ax.bar(warehouses, supply_values, width=0.4, label="Supply", color='b', align='center')
+ax.bar(customers, demand_values, width=0.4, label="Demand", color='r', align='edge')
+plt.title("Supply and Demand Comparison")
+plt.ylabel("Units")
+plt.xlabel("Warehouses and Customers")
+plt.legend()
+plt.xticks(rotation=45)
+plt.show()
