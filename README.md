@@ -17,7 +17,8 @@ This project focuses on optimizing transportation costs by efficiently allocatin
 ![WhatsApp Image 2025-01-11 at 22 42 05_0a899696](https://github.com/user-attachments/assets/f7aedf46-ec2d-409e-a092-cdfb45e0bccb)
 
 ![WhatsApp Image 2025-01-11 at 22 42 15_fe39c596](https://github.com/user-attachments/assets/fa332ee8-ecc8-42b7-acdb-945b9c2fd492)
-![Uploading WhatsApp Image 2025-01-11 at 22.42.27_c4569f69.jpg…]()
+![WhatsApp Image 2025-01-11 at 22 42 27_c4569f69](https://github.com/user-attachments/assets/b3630307-448f-4cab-86f1-b9d439a1213c)
+
 
 
 
